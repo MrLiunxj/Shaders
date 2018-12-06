@@ -1,0 +1,145 @@
+// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
+Shader "Unlit/贴图的平移缩放"
+{
+Properties
+{
+_MainTex("Texture", 2D) = "white" {}
+_UA("旋转中点x",Float) = 0.5
+_UB("旋转中点y",Float) = 0.5
+_CenterX("平移x",float) = 0
+_CenterY("平移y",float) = 0
+_Scale("缩放",Float) = 10
+_RotateNum("旋转角度",Range(-360,360)) = 0
+}
+SubShader
+{
+Tags { "RenderType"="Opaque" }
+LOD 100
+Pass
+{
+CGPROGRAM
+#pragma vertex vert
+#pragma fragment frag
+#include "UnityCG.cginc"
+
+sampler2D _MainTex; 
+float4 _MainTex_ST;
+float _UA;
+float _UB;
+float _RA;
+float _Scale;
+float _RotateNum;
+float _CenterX;
+float _CenterY;
+
+		struct v2f
+		{
+		float2 uv : TEXCOORD0;
+		float4 pos : SV_POSITION;
+		};
+
+		v2f vert (appdata_full v)
+		{
+		v2f o; 
+		o.pos = UnityObjectToClipPos(v.vertex);
+		o.uv = v.texcoord;
+		return o;
+		};
+
+		fixed4 frag (v2f i) : SV_TARGET
+{
+
+		float Rote = (_RotateNum * 3.1415926)/180;
+		float sinNum = sin(Rote);
+		float cosNum = cos(Rote);
+float2 di = float2(_UA,_UB);
+		//计算平移之后的坐标，需要乘平移矩阵   
+		float2 uv = mul(float3(i.uv - di,1),float3x3(1,0,0,0,1,0,_CenterX,_CenterY,1)).xy;
+		//计算缩放之后的坐标，需要乘缩放矩阵
+		uv = mul(uv,float2x2(_Scale,0,0,_Scale));
+		//计算旋转之后的坐标，需要乘旋转矩阵
+		uv = mul(uv,float2x2(cosNum,-sinNum,sinNum,cosNum)) + di;
+fixed4 col;
+		//用最终的坐标来采样当前的纹理，就ok了
+		col = tex2D(_MainTex,TRANSFORM_TEX(uv,_MainTex));;
+		return col;
+}
+ENDCG
+}
+}
+}
+
+
+
+
+Remap:
+ newMin  CurValue oldMin  newMax  newMin  oldMax oldMin
+(0.0 + (_Float0 - 0.0) * (100.0 - 0.0) / (1.0 - 0.0))
+
+
+
+// Made with Amplify Shader Editor
+// Available at the Unity Asset Store - http://u3d.as/y3X 
+Shader "Zoom"
+{
+	Properties
+	{
+		_Albedo("Albedo", 2D) = "white" {}
+		[HideInInspector] _texcoord( "", 2D ) = "white" {}
+		[HideInInspector] __dirty( "", Int ) = 1
+		_Scale("缩放",Range(0,10)) = 1
+		_RotateNum("旋转角度",Range(-360,360)) = 0
+	}
+
+	SubShader
+	{
+		Tags{ "RenderType" = "Opaque"  "Queue" = "Geometry+0" }
+		Cull Back
+		Blend SrcAlpha OneMinusSrcAlpha
+		
+		CGPROGRAM
+		#pragma target 3.0
+		#pragma surface surf Standard keepalpha addshadow fullforwardshadows 
+		struct Input
+		{
+			float2 uv_texcoord;
+		};
+
+		uniform sampler2D _Albedo;
+		uniform float4 _Albedo_ST;
+		uniform float _Scale;
+		uniform float _RotateNum;
+		void surf( Input i , inout SurfaceOutputStandard o )
+		{
+			float2 uv_Albedo = i.uv_texcoord * _Albedo_ST.xy + _Albedo_ST.zw;
+			float Rote = (_RotateNum * 3.1415926)/180;
+			float sinNum = sin(Rote);
+			float cosNum = cos(Rote);
+			float2 di = float2(0.5,0.5);
+			//计算平移之后的坐标，需要乘平移矩阵   
+			float2 uv = mul(float3(uv_Albedo - di,1),float3x3(1,0,0,0,1,0,0,0,1)).xy;
+			//计算缩放之后的坐标，需要乘缩放矩阵
+			uv = mul(uv,float2x2(_Scale * -1,0,0,_Scale * -1));
+			uv = mul(uv,float2x2(cosNum,-sinNum,sinNum,cosNum)) + di;
+
+			float4 tex2DNode1 = tex2D( _Albedo, TRANSFORM_TEX(uv,_Albedo) );
+			o.Albedo = tex2DNode1.rgb;
+			o.Alpha = 1;
+		}
+
+		ENDCG
+	}
+	Fallback "Diffuse"
+	CustomEditor "ASEMaterialInspector"
+}
+/*ASEBEGIN
+Version=15800
+2567;29;1906;1004;1573.764;380.4872;1;True;True
+Node;AmplifyShaderEditor.SamplerNode;1;-779.1999,43.40004;Float;True;Property;_Albedo;Albedo;0;0;Create;True;0;0;False;0;8e8ed5e7bd8a9ab4891855a5be8e1475;8e8ed5e7bd8a9ab4891855a5be8e1475;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;6;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.SimpleMultiplyOpNode;38;-444.5737,225.7752;Float;False;2;2;0;FLOAT;0;False;1;FLOAT;0;False;1;FLOAT;0
+Node;AmplifyShaderEditor.StandardSurfaceOutputNode;0;0,0;Float;False;True;2;Float;ASEMaterialInspector;0;0;Standard;Zoom;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;Back;0;False;-1;0;False;-1;False;0;False;-1;0;False;-1;False;0;Opaque;0.5;True;True;0;False;Opaque;;Geometry;All;True;True;True;True;True;True;True;True;True;True;True;True;True;True;True;True;True;0;False;-1;False;0;False;-1;255;False;-1;255;False;-1;0;False;-1;0;False;-1;0;False;-1;0;False;-1;0;False;-1;0;False;-1;0;False;-1;0;False;-1;False;2;15;10;25;False;0.5;True;2;5;False;-1;10;False;-1;0;0;False;-1;0;False;-1;0;False;-1;0;False;-1;0;False;0;0,0,0,0;VertexOffset;True;False;Cylindrical;False;Relative;0;;-1;-1;-1;-1;0;False;0;0;False;-1;-1;0;False;-1;0;0;0;16;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;3;FLOAT;0;False;4;FLOAT;0;False;5;FLOAT;0;False;6;FLOAT3;0,0,0;False;7;FLOAT3;0,0,0;False;8;FLOAT;0;False;9;FLOAT;0;False;10;FLOAT;0;False;13;FLOAT3;0,0,0;False;11;FLOAT3;0,0,0;False;12;FLOAT3;0,0,0;False;14;FLOAT4;0,0,0,0;False;15;FLOAT3;0,0,0;False;0
+WireConnection;38;0;1;4
+WireConnection;0;0;1;0
+ASEEND*/
+//CHKSM=75478F3972301B24A7DD057E316998E5E87245C2
