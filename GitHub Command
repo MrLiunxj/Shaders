@@ -7,3 +7,7 @@
 2.git add .
 3.git commit -m "MessageInfo"
 4.git push -u origin master //push 代码到服务器
+
+备注：
+1.第三步有可能提示fatal: remote origin already exists. 那么执行：git remote rm origin，在执行第三步代码即可；
+2.如果没有第三步的关联服务器的话，第四步也可以提交代码，但是无法提交到服务器，只相当于提交到本地的代码仓库目录里面；
