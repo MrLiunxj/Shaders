@@ -1,0 +1,9 @@
+提交本地的修改到GitHub服务器：
+先新增文件：git add filename 或者 git add . 新增目录下所有文件；
+查看状态：git status ，信息提示修改了一个文件，新增了一个文件；
+
+提交文件：
+1.git pull origin master //pull代码到本地
+2.git add .
+3.git commit -m "MessageInfo"
+4.git push -u origin master //push 代码到服务器
